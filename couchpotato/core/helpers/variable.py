@@ -86,7 +86,7 @@ def isDict(obj):
     return isinstance(obj, dict)
 
 
-def mergeDicts(a, b, prepend_list = False):
+def mergeDicts(a, b, prepend_list = False, merge_sublists = True):
     assert isDict(a), isDict(b)
     dst = a.copy()
 
@@ -100,7 +100,10 @@ def mergeDicts(a, b, prepend_list = False):
                 if isDict(current_src[key]) and isDict(current_dst[key]):
                     stack.append((current_dst[key], current_src[key]))
                 elif isinstance(current_src[key], list) and isinstance(current_dst[key], list):
-                    current_dst[key] = current_src[key] + current_dst[key] if prepend_list else current_dst[key] + current_src[key]
+                    if merge_sublists:
+                        current_dst[key] = current_src[key] + current_dst[key] if prepend_list else current_dst[key] + current_src[key]
+                    else:
+                        current_dst[key] = current_src[key]
                     current_dst[key] = removeListDuplicates(current_dst[key])
                 else:
                     current_dst[key] = current_src[key]
