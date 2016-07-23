@@ -56,7 +56,7 @@ class QualityPlugin(Plugin):
         addEvent('quality.isfinish', self.isFinish)
         addEvent('quality.fill', self.fill)
 
-        addApiView('quality.size.save', self.saveSize)
+        addApiView('quality.save', self.saveQuality)
         addApiView('quality.list', self.allView, docs = {
             'desc': 'List all available qualities',
             'return': {'type': 'object', 'example': """{
@@ -101,7 +101,7 @@ class QualityPlugin(Plugin):
         temp = []
         for quality in self.qualities:
             quality_doc = db.get('quality', quality.get('identifier'), with_doc = True)['doc']
-            q = mergeDicts(quality, quality_doc)
+            q = mergeDicts(quality, quality_doc, merge_sublists = False)
             temp.append(q)
 
         if len(temp) == len(self.qualities):
@@ -116,7 +116,7 @@ class QualityPlugin(Plugin):
 
         quality = db.get('quality', identifier, with_doc = True)['doc']
         if quality:
-            quality_dict = mergeDicts(self.getQuality(quality['identifier']), quality)
+            quality_dict = mergeDicts(self.getQuality(quality['identifier']), quality, merge_sublists = False)
 
         return quality_dict
 
@@ -126,14 +126,34 @@ class QualityPlugin(Plugin):
             if identifier == q.get('identifier'):
                 return q
 
-    def saveSize(self, **kwargs):
+    def saveQuality(self, **kwargs):
 
         try:
             db = get_db()
             quality = db.get('quality', kwargs.get('identifier'), with_doc = True)
 
             if quality:
-                quality['doc'][kwargs.get('value_type')] = tryInt(kwargs.get('value'))
+                value_type = kwargs.get('value_type')
+                if value_type in ('size_min', 'size_max', 'median_size', 'height', 'width'):
+                    quality['doc'][kwargs.get('value_type')] = tryInt(kwargs.get('value'))
+                elif value_type in ('hd', 'allow_3d'):
+                    quality['doc'][value_type] = kwargs.get('value')
+                elif value_type in ('alternative', 'allow', 'ext', 'tags'):
+                    values = splitString(kwargs.get('value').lower())
+                    value_arr = []
+                    for value in values:
+                        words = splitString(value, split_on=' ')
+                        if len(words) == 1:
+                            value_arr.append(value)
+                        elif len(words) == 2:
+                            value_arr.append((words[0], words[1]))
+                        else:
+                            log.error('Failed: More than 2 words: %s', words)
+                    quality['doc'][value_type] = value_arr
+                elif value_type in ('label'):
+                    quality['doc'][value_type] = kwargs.get('value')
+                else:
+                    log.error('Failed: value_type %s doesn\' exists', value_type)
                 db.update(quality['doc'])
 
             self.cached_qualities = None

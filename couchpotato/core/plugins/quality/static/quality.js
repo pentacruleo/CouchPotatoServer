@@ -181,8 +181,8 @@ var QualityBase = new Class({
 		var self = this;
 
 		var group = self.settings.createGroup({
-			'label': 'Sizes',
-			'description': 'Edit the minimal and maximum sizes (in MB) for each quality.',
+			'label': 'Qualities',
+			'description': 'Edit the minimal and maximum sizes (in MB) for each quality. Please don\'t change any other values unless you know what you are doing.',
 			'advanced': true,
 			'name': 'sizes'
 		}).inject(self.content);
@@ -190,7 +190,16 @@ var QualityBase = new Class({
 		new Element('div.item.head.ctrlHolder').adopt(
 			new Element('span.label', {'text': 'Quality'}),
 			new Element('span.min', {'text': 'Min'}),
-			new Element('span.max', {'text': 'Max'})
+			new Element('span.max', {'text': 'Max'}),
+			new Element('span.hd_label', {'text': 'HD'}),
+			new Element('span.allow_3d_label', {'text': '3D'}),
+			new Element('span.median_size', {'text': 'Median'}),
+			new Element('span.width', {'text': 'Width'}),
+			new Element('span.height', {'text': 'Height'}),
+			new Element('span.alternative', {'text': 'Alternative'}),
+			new Element('span.allow', {'text': 'Allow'}),
+			new Element('span.ext', {'text': 'Extensions'}),
+			new Element('span.tags', {'text': 'Tags'})
 		).inject(group);
 
 		Array.each(self.qualities, function(quality){
@@ -200,7 +209,7 @@ var QualityBase = new Class({
 					'value': quality.size_min,
 					'events': {
 						'keyup': function(e){
-							self.changeSize(quality.identifier, 'size_min', e.target.get('value'));
+							self.changeQuality(quality.identifier, 'size_min', e.target.get('value'));
 						}
 					}
 				}),
@@ -208,23 +217,94 @@ var QualityBase = new Class({
 					'value': quality.size_max,
 					'events': {
 						'keyup': function(e){
-							self.changeSize(quality.identifier, 'size_max', e.target.get('value'));
+							self.changeQuality(quality.identifier, 'size_max', e.target.get('value'));
+						}
+					}
+				}),
+				new Element('input.hd[type=checkbox]', {
+					'checked': quality.hd,
+					'events': {
+						'change': function(e){
+							self.changeQuality(quality.identifier, 'hd', e.target.get('checked'));
+						}
+					}
+				}),
+				new Element('input.allow_3d[type=checkbox]', {
+					'checked': quality.allow_3d,
+					'events': {
+						'change': function(e){
+							self.changeQuality(quality.identifier, 'allow_3d', e.target.get('checked'));
+						}
+					}
+				}),
+				new Element('input.median_size[type=text]', {
+					'value': quality.median_size,
+					'events': {
+						'keyup': function(e){
+							self.changeQuality(quality.identifier, 'median_size', e.target.get('value'));
+						}
+					}
+				}),
+				new Element('input.width[type=text]', {
+					'value': quality.width,
+					'events': {
+						'keyup': function(e){
+							self.changeQuality(quality.identifier, 'width', e.target.get('value'));
+						}
+					}
+				}),
+				new Element('input.height[type=text]', {
+					'value': quality.height,
+					'events': {
+						'keyup': function(e){
+							self.changeQuality(quality.identifier, 'height', e.target.get('value'));
+						}
+					}
+				}),
+				new Element('input.alternative[type=text]', {
+					'value': quality.alternative instanceof Array ? quality.alternative.map(function(e){return e instanceof Array ? e.join(' ') : e; }).join(', ') : quality.alternative,
+					'events': {
+						'keyup': function(e){
+							self.changeQuality(quality.identifier, 'alternative', e.target.get('value'));
+						}
+					}
+				}),
+				new Element('input.allow[type=text]', {
+					'value': quality.allow instanceof Array ? quality.allow.map(function(e){return e instanceof Array ? e.join(' ') : e; }).join(', ') : quality.allow,
+					'events': {
+						'keyup': function(e){
+							self.changeQuality(quality.identifier, 'allow', e.target.get('value'));
+						}
+					}
+				}),
+				new Element('input.ext[type=text]', {
+					'value': quality.ext instanceof Array ? quality.ext.map(function(e){return e instanceof Array ? e.join(' ') : e; }).join(', ') : quality.ext,
+					'events': {
+						'keyup': function(e){
+							self.changeQuality(quality.identifier, 'ext', e.target.get('value'));
+						}
+					}
+				}),
+				new Element('input.tags[type=text]', {
+					'value': quality.tags instanceof Array ? quality.tags.map(function(e){return e instanceof Array ? e.join(' ') : e; }).join(', ') : quality.tags,
+					'events': {
+						'keyup': function(e){
+							self.changeQuality(quality.identifier, 'tags', e.target.get('value'));
 						}
 					}
 				})
 			).inject(group);
 		});
-
 	},
 
 	size_timer: {},
-	changeSize: function(identifier, type, value){
+	changeQuality: function(identifier, type, value){
 		var self = this;
 
 		if(self.size_timer[identifier + type]) clearRequestTimeout(self.size_timer[identifier + type]);
 
 		self.size_timer[identifier + type] = requestTimeout(function(){
-			Api.request('quality.size.save', {
+			Api.request('quality.save', {
 				'data': {
 					'identifier': identifier,
 					'value_type': type,
